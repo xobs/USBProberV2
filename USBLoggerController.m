@@ -119,9 +119,6 @@ static int remainingFreshEntries = 0;
         [LoggingLevelPopUp selectItemAtIndex:[[[NSUserDefaults standardUserDefaults] objectForKey:@"USBLoggerLoggingLevel"] intValue]-1];
     }
     
-    _klogKextisPresent = [self isKlogKextPresent];
-    _klogKextIsCorrectRevision = [self isKlogCorrectRevision];
-    
     _refreshTimer = [[NSTimer scheduledTimerWithTimeInterval: (NSTimeInterval) LOGGER_REFRESH_INTERVAL
                                                       target:                         self
                                                     selector:                       @selector(handlePendingOutput:)
@@ -168,7 +165,7 @@ static int remainingFreshEntries = 0;
 - (IBAction)ChangeLoggingLevel:(id)sender
 {
     if (_logger != nil) {
-        [_logger setDebuggerOptions:-1 setLevel:true level:[[sender selectedItem] tag] setType:false type:0];
+        [_logger setLevel:[[sender selectedItem] tag]];
     }
     [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithInt:[[sender selectedItem] tag]] forKey:@"USBLoggerLoggingLevel"];
 }
@@ -241,40 +238,24 @@ static int remainingFreshEntries = 0;
 
 - (IBAction)Start:(id)sender
 {
-    if (!_klogKextisPresent) {
-        int result = NSRunAlertPanel (@"Missing Kernel Extension", @"The required kernel extension \"KLog.kext\" is not installed. Would you like to install it now?", @"Install", @"Cancel", nil);
-        if (result == NSAlertDefaultReturn) {
-            //try to install
-            if ([self installKLogKext] != YES) {
-                // error occured while installing, so return
-                return;
-            } else {
-				_klogKextisPresent = YES;
-				_klogKextIsCorrectRevision = YES;
-			}
-        } else {
-            // user does not want to install KLog.kext, so return
+    NSArray *downInterfaces;
+    
+    if ([[USBLogger captureInterfaces] count] == 0) {
+        NSRunAlertPanel (@"No USB Capture Interfaces", @"This Mac does not have any USB packet capture interfaces (XHC0, XHC1, ...).", @"OK", nil, nil);
+        return;
+    }
+    
+    downInterfaces = [USBLogger downCaptureInterfaces];
+    if ([downInterfaces count] > 0) {
+        int result = NSRunAlertPanel (@"USB Capture Interfaces Are Down", @"The USB packet capture interfaces (%@) must be brought up before logging. This requires an administrator password. Bring them up now?", @"Bring Up", @"Cancel", nil, [downInterfaces componentsJoinedByString:@", "]);
+        if (result != NSAlertDefaultReturn) {
             return;
         }
-    } else if ( !_klogKextIsCorrectRevision )
-	{
-        int result = NSRunAlertPanel (@"Wrong revision for Kernel Extension", @"The required kernel extension \"KLog.kext\" is not the right revision. Would you like to upgrade it now?", @"Upgrade", @"Cancel", nil);
-        if (result == NSAlertFirstButtonReturn) {
-            //try to install
-            if ([self removeAndinstallKLogKext] != YES) {
-                // error occured while installing, so return
-                return;
-            } else 
-			{
-				NSRunAlertPanel (@"Need to Restart", @"The required kernel extension \"KLog.kext\" was installed.  Please quit and restart.", @"OK", nil, nil);
-				_klogKextIsCorrectRevision = NO;
-				return;
-			}
-        } else {
-            // user does not want to install KLog.kext, so return
+        if ([self bringUpCaptureInterfaces:downInterfaces] != YES) {
+            NSRunAlertPanel (@"Could Not Bring Up Interfaces", @"USB Prober was unable to bring up the USB capture interfaces.", @"OK", nil, nil);
             return;
-		}
-	}
+        }
+    }
     
     if ([DumpCheckBox state] == NSControlStateValueOn)
     {
@@ -316,7 +297,15 @@ static int remainingFreshEntries = 0;
         _logger = [[USBLogger alloc] initWithListener:self level:[[LoggingLevelPopUp selectedItem] tag]];
         
     }
-    [_logger beginLogging];
+    if (![_logger beginLogging]) {
+        [_logger release];
+        _logger = nil;
+        if (_dumpingFile != NULL) {
+            fclose(_dumpingFile);
+            _dumpingFile = NULL;
+        }
+        return;
+    }
     
     [DumpCheckBox setEnabled:NO];
     [StartStopButton setAction:@selector(Stop:)];
@@ -390,154 +379,48 @@ static int remainingFreshEntries = 0;
     [finalOutput release];
 }
 
-	- (BOOL)isKlogKextPresent {
-		return [[NSFileManager defaultManager] fileExistsAtPath:@"/Library/Extensions/KLog.kext"];
-	}
-	
-	- (BOOL)isKlogCorrectRevision {
-		NSBundle	* klogBundle = [NSBundle bundleWithPath:@"/Library/Extensions/KLog.kext"];
-		
-		if ( klogBundle == nil)
-			return NO;
-		
-		/*NSDictionary *plist = [klogBundle infoDictionary];
-		uint32_t version = [[plist valueForKey:@"CFBundleNumericVersion"] intValue];
-		if ( (version < 0x03600000) && (version != 0) )
-			return NO;
-		else*/
-			return YES;
-		}
-	
-	- (BOOL)installKLogKext {
-		NSString *              sourcePath = [[NSBundle mainBundle] pathForResource:@"KLog" ofType:@"kext"];
-		NSString *              destPath = [NSString pathWithComponents:[NSArray arrayWithObjects:@"/",@"Library",@"Extensions",@"KLog.kext",nil]];
-		NSString *              permRepairPath = [[NSBundle mainBundle] pathForResource:@"SetKLogPermissions" ofType:@"sh"];
-		
-		AuthorizationRights     myRights;
-		AuthorizationItem       myItems[1];
-		AuthorizationRef        authorizationRef;
-		OSStatus                err;
-		
-		if ([[NSFileManager defaultManager] fileExistsAtPath:sourcePath] == NO) {
-			NSRunAlertPanel (@"Missing Source File", @"\"KLog.kext\" could not be installed because it is missing from the application bundle.", @"Okay", nil, nil);
-			return NO;
-		}
-		
-		myItems[0].name = kAuthorizationRightExecute;
-		myItems[0].valueLength = 0;
-		myItems[0].value = NULL;
-		myItems[0].flags = 0;
-		
-		myRights.count = sizeof(myItems) / sizeof(myItems[0]);
-		myRights.items = myItems;
-		
-		err = AuthorizationCreate (&myRights, kAuthorizationEmptyEnvironment, kAuthorizationFlagInteractionAllowed | kAuthorizationFlagExtendRights, &authorizationRef);
-		
-		if (err == errAuthorizationSuccess) {
-			char *  cpArgs[4];
-			char *  shArgs[2];
-			char *  kextloadArgs[2];
-			int     status;
-			
-			cpArgs[0] = "-r";
-			cpArgs[1] = (char *)[sourcePath cStringUsingEncoding:NSUTF8StringEncoding];
-			cpArgs[2] = (char *)[destPath cStringUsingEncoding:NSUTF8StringEncoding];
-			cpArgs[3] = NULL;
-			
-			err = AuthorizationExecuteWithPrivileges(authorizationRef, "/bin/cp", 0, cpArgs, NULL);
-			if (err) return NO;
-			
-			shArgs[0] = (char *)[permRepairPath cStringUsingEncoding:NSUTF8StringEncoding];
-			shArgs[1] = NULL;
-			
-			err = AuthorizationExecuteWithPrivileges(authorizationRef, "/bin/sh", 0, shArgs, NULL);
-			if (err) return NO;
-			
-			kextloadArgs[0] = (char *)[destPath cStringUsingEncoding:NSUTF8StringEncoding];
-			kextloadArgs[1] = NULL;
-			
-			err = AuthorizationExecuteWithPrivileges(authorizationRef, "/sbin/kextload", 0, kextloadArgs, NULL);
-			if (err) return NO;
-			
-			while (wait(&status) != -1) {
-				// wait for forked process to terminate
-			}
-			
-			AuthorizationFree(authorizationRef, kAuthorizationFlagDestroyRights);
-			return YES;
-		} else {
-			return NO;
-		}
-	}
-	
-	- (BOOL)removeAndinstallKLogKext {
-		NSString *              sourcePath = [[NSBundle mainBundle] pathForResource:@"KLog" ofType:@"kext"];
-		NSString *              destPath = [NSString pathWithComponents:[NSArray arrayWithObjects:@"/",/*@"System",*/@"Library",@"Extensions",@"KLog.kext",nil]];
-		NSString *              permRepairPath = [[NSBundle mainBundle] pathForResource:@"SetKLogPermissions" ofType:@"sh"];
-		
-		AuthorizationRights     myRights;
-		AuthorizationItem       myItems[1];
-		AuthorizationRef        authorizationRef;
-		OSStatus                err;
-		
-		if ([[NSFileManager defaultManager] fileExistsAtPath:sourcePath] == NO) {
-			NSRunAlertPanel (@"Missing Source File", @"\"KLog.kext\" could not be installed because it is missing from the application bundle.", @"Okay", nil, nil);
-			return NO;
-		}
-		
-		myItems[0].name = kAuthorizationRightExecute;
-		myItems[0].valueLength = 0;
-		myItems[0].value = NULL;
-		myItems[0].flags = 0;
-		
-		myRights.count = sizeof(myItems) / sizeof(myItems[0]);
-		myRights.items = myItems;
-		
-		err = AuthorizationCreate (&myRights, kAuthorizationEmptyEnvironment, kAuthorizationFlagInteractionAllowed | kAuthorizationFlagExtendRights, &authorizationRef);
-		
-		if (err == errAuthorizationSuccess) {
-			char *  cpArgs[4];
-			char *  shArgs[2];
-			char *  kextloadArgs[2];
-			int     status;
-			
-			// Remove it
-			cpArgs[0] = (char *)[destPath cStringUsingEncoding:NSUTF8StringEncoding];
-			cpArgs[1] = "/private/tmp";
-			cpArgs[2] = NULL;
-			cpArgs[3] = NULL;
-			
-			err = AuthorizationExecuteWithPrivileges(authorizationRef, "/bin/mv", 0, cpArgs, NULL);
-			if (err) return NO;
-			
-			// Copy it
-			cpArgs[0] = "-r";
-			cpArgs[1] = (char *)[sourcePath cStringUsingEncoding:NSUTF8StringEncoding];
-			cpArgs[2] = (char *)[destPath cStringUsingEncoding:NSUTF8StringEncoding];
-			cpArgs[3] = NULL;
-			
-			err = AuthorizationExecuteWithPrivileges(authorizationRef, "/bin/cp", 0, cpArgs, NULL);
-			if (err) return NO;
-			
-			shArgs[0] = (char *)[permRepairPath cStringUsingEncoding:NSUTF8StringEncoding];
-			shArgs[1] = NULL;
-			
-			err = AuthorizationExecuteWithPrivileges(authorizationRef, "/bin/sh", 0, shArgs, NULL);
-			if (err) return NO;
-			
-			kextloadArgs[0] = (char *)[destPath cStringUsingEncoding:NSUTF8StringEncoding];
-			kextloadArgs[1] = NULL;
-			
-			while (wait(&status) != -1) {
-				// wait for forked process to terminate
-			}
-			
-			AuthorizationFree(authorizationRef, kAuthorizationFlagDestroyRights);
-			return YES;
-		} else {
-			return NO;
-		}
-	}
+// The XHCn capture interfaces must be up before they deliver packets, and only
+// root can bring them up.
+- (BOOL)bringUpCaptureInterfaces:(NSArray *)interfaces {
+    AuthorizationRights     myRights;
+    AuthorizationItem       myItems[1];
+    AuthorizationRef        authorizationRef;
+    OSStatus                err;
+    NSEnumerator *          interfaceEnumerator;
+    NSString *              interface;
+    int                     status;
+    
+    myItems[0].name = kAuthorizationRightExecute;
+    myItems[0].valueLength = 0;
+    myItems[0].value = NULL;
+    myItems[0].flags = 0;
+    
+    myRights.count = sizeof(myItems) / sizeof(myItems[0]);
+    myRights.items = myItems;
+    
+    err = AuthorizationCreate (&myRights, kAuthorizationEmptyEnvironment, kAuthorizationFlagInteractionAllowed | kAuthorizationFlagExtendRights, &authorizationRef);
+    if (err != errAuthorizationSuccess)
+        return NO;
+    
+    interfaceEnumerator = [interfaces objectEnumerator];
+    while (interface = [interfaceEnumerator nextObject]) {
+        char *  ifconfigArgs[3];
+        
+        ifconfigArgs[0] = (char *)[interface UTF8String];
+        ifconfigArgs[1] = "up";
+        ifconfigArgs[2] = NULL;
+        
+        err = AuthorizationExecuteWithPrivileges(authorizationRef, "/sbin/ifconfig", 0, ifconfigArgs, NULL);
+        if (err) break;
+    }
+    
+    while (wait(&status) != -1) {
+        // wait for forked processes to terminate
+    }
+    
+    AuthorizationFree(authorizationRef, kAuthorizationFlagDestroyRights);
+    return (err == errAuthorizationSuccess && [[USBLogger downCaptureInterfaces] count] == 0);
+}
 
 - (NSArray *)logEntries {
     return _outputLines;

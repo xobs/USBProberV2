@@ -20,10 +20,8 @@
 		3ED5D6790DD4A2CE00AD5562 /* KLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E0EA84A050D1F76009D1D9C /* KLog.cpp */; };
 		3ED5D67A0DD4A2CE00AD5562 /* KLogClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E0EA84C050D1F76009D1D9C /* KLogClient.cpp */; };
 		3ED5D67C0DD4A2CE00AD5562 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3E0EA84F050D1F76009D1D9C /* InfoPlist.strings */; };
-		3ED5D6B90DD4AA9100AD5562 /* KLog.kext in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3ED5D6840DD4A2CE00AD5562 /* KLog.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		3ED5D6EF0DD4AC3A00AD5562 /* KLogInfoPlist.pch in Headers */ = {isa = PBXBuildFile; fileRef = 3ED5D6EE0DD4AC3A00AD5562 /* KLogInfoPlist.pch */; };
 		7206B40D04C3392200856A2F /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7206B40C04C3392200856A2F /* Security.framework */; };
-		7206B50B04C33BFD00856A2F /* SetKLogPermissions.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7206B50A04C33BFD00856A2F /* SetKLogPermissions.sh */; };
 		724C8B9B04B241770045B190 /* DecodeDeviceQualifierDescriptor.h in Headers */ = {isa = PBXBuildFile; fileRef = 724C8B9904B241770045B190 /* DecodeDeviceQualifierDescriptor.h */; };
 		724C8B9C04B241770045B190 /* DecodeDeviceQualifierDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 724C8B9A04B241770045B190 /* DecodeDeviceQualifierDescriptor.m */; };
 		7262369304B0CAD00026A607 /* BusProbeClass.h in Headers */ = {isa = PBXBuildFile; fileRef = 7262369104B0CAD00026A607 /* BusProbeClass.h */; };
@@ -96,29 +94,6 @@
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		ABD2F34D25975B100059AF97 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = ABD2F34425975AFA0059AF97 /* MainMenu.xib */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		3ED5D6AC0DD4A9D600AD5562 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 3ED5D6730DD4A2CE00AD5562;
-			remoteInfo = KLog;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		3E0EA8D2050D2170009D1D9C /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 7;
-			files = (
-				3ED5D6B90DD4AA9100AD5562 /* KLog.kext in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
@@ -544,12 +519,10 @@
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
-				3E0EA8D2050D2170009D1D9C /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3ED5D6AD0DD4A9D600AD5562 /* PBXTargetDependency */,
 			);
 			name = "USB Prober";
 			productInstallPath = "$(HOME)/Applications";
@@ -564,11 +537,6 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 1230;
-				TargetAttributes = {
-					3ED5D6730DD4A2CE00AD5562 = {
-						DevelopmentTeam = YZAQ856TTM;
-					};
-				};
 			};
 			buildConfigurationList = 3E420D2E08E1B98300FD1873 /* Build configuration list for PBXProject "USBProber" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -612,7 +580,6 @@
 				72DDD15F04A298B20067E712 /* mark.tiff in Resources */,
 				72DDD16104A298B60067E712 /* clear.tiff in Resources */,
 				726236BE04B0E16D0026A607 /* USBVendors.txt in Resources */,
-				7206B50B04C33BFD00856A2F /* SetKLogPermissions.sh in Resources */,
 				72DA3D2404C4A5D500DBD7EE /* USBProberIcon.icns in Resources */,
 				3E7CBCE604F3DBFF008267FD /* USB Prober_Prefix.pch in Resources */,
 			);
@@ -702,14 +669,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		3ED5D6AD0DD4A9D600AD5562 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 3ED5D6730DD4A2CE00AD5562 /* KLog */;
-			targetProxy = 3ED5D6AC0DD4A9D600AD5562 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXVariantGroup section */
 		089C165CFE840E0CC02AAC07 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
@@ -760,7 +719,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "";
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.USBProber;
 				PRODUCT_NAME = "USB Prober";
 				SECTORDER_FLAGS = "";
@@ -796,7 +755,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "";
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.USBProber;
 				PRODUCT_NAME = "USB Prober";
 				SECTORDER_FLAGS = "";
@@ -828,7 +787,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "";
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.USBProber;
 				PRODUCT_NAME = "USB Prober";
 				SECTORDER_FLAGS = "";
@@ -875,7 +834,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "x86_64 i386 ppc";
 			};
 			name = Development;
 		};
@@ -910,9 +868,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "x86_64 i386 ppc";
 			};
 			name = Deployment;
 		};
@@ -947,9 +904,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "x86_64 i386 ppc";
 			};
 			name = Default;
 		};
@@ -961,8 +917,9 @@
 				CLANG_ANALYZER_NULL_DEREFERENCE = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COPY_PHASE_STRIP = NO;
-				DEVELOPMENT_TEAM = YZAQ856TTM;
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
@@ -1002,10 +959,11 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COPY_PHASE_STRIP = YES;
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
-				DEVELOPMENT_TEAM = YZAQ856TTM;
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
@@ -1042,7 +1000,8 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				DEVELOPMENT_TEAM = YZAQ856TTM;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "";

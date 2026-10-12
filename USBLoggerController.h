@@ -65,9 +65,6 @@
     
     USBLogger *         _logger;
     NSTimer *           _refreshTimer;
-    
-    BOOL                _klogKextisPresent;
-    BOOL                _klogKextIsCorrectRevision;
 }
 
 - (void)setupRecentSearchesMenu;
@@ -81,10 +78,7 @@
 - (IBAction)ToggleDumping:(id)sender;
 - (IBAction)FilterOutput:(id)sender;
 
-- (BOOL)isKlogKextPresent;
-- (BOOL)isKlogCorrectRevision;
-- (BOOL)installKLogKext;
-- (BOOL)removeAndinstallKLogKext;
+- (BOOL)bringUpCaptureInterfaces:(NSArray *)interfaces;
 
 - (NSArray *)logEntries;
 - (NSArray *)displayedLogLines;

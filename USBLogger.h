@@ -25,53 +25,19 @@
 
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
-#import <stdio.h>
-#import <stdlib.h>
-#import <unistd.h>
-#import <sys/time.h>
+#import <pcap/pcap.h>
 
-#import <CoreServices/CoreServices.h>
-
-#import <IOKit/IOKitLib.h>
-#import <IOKit/usb/IOUSBLib.h>
-#import <IOKit/IODataQueueClient.h>
-#import <IOKit/IODataQueueShared.h>
-#import <mach/mach_port.h>
-
-// Index for user client methods (from IOUSBLog.h)
+// Logging levels (matches the 1-7 "Logging Level" popup)
+//
 enum
 {
-    kUSBControllerUserClientOpen = 0,
-    kUSBControllerUserClientClose,
-    kUSBControllerUserClientEnableLogger,
-    kUSBControllerUserClientSetDebuggingLevel,
-    kUSBControllerUserClientSetDebuggingType,
-    kUSBControllerUserClientGetDebuggingLevel,
-    kUSBControllerUserClientGetDebuggingType,
-    kNumUSBControllerMethods
-};
-
-// KLog Message defines
-//
-#define _T_STAMP     sizeof(struct timeval)
-#define _LEVEL         sizeof(UInt32)
-#define _TAG        sizeof(UInt32)
-#define _OFFSET     (_T_STAMP + _LEVEL + _TAG)
-#define _MSG        BUFSIZE - (_T_STAMP + _LEVEL + _TAG)
-
-#define BUFSIZE 1024     //entries
-#define ENTRYSIZE 1200     //bytes
-
-#define Q_ON    1
-#define Q_OFF    0
-
-// Info Debug Output Types (from the KLog user client)
-//
-typedef UInt32        KernelDebuggingOutputType;
-enum
-{
-    kKernelDebugOutputIOLogType        = 0x00000001,
-    kKernelDebugOutputKextLoggerType    = 0x00000002
+    kUSBLoggerLevelErrors       = 1,    // failed transfers only
+    kUSBLoggerLevelSetup        = 2,    // + control requests (setup packets)
+    kUSBLoggerLevelCompletions  = 3,    // + every completed transfer
+    kUSBLoggerLevelSubmits      = 4,    // + every submitted transfer
+    kUSBLoggerLevelShortData    = 5,    // + first 64 bytes of each payload
+    kUSBLoggerLevelLongData     = 6,    // + first 512 bytes of each payload
+    kUSBLoggerLevelAllData      = 7     // + entire payload
 };
 
 @protocol USBLoggerListener <NSObject>
@@ -80,25 +46,25 @@ enum
 
 @end
 
+// Captures USB traffic from the XHCn packet capture interfaces (DLT_USB_DARWIN)
+// via libpcap.  This replaces the old KLog.kext based logger.
+//
 @interface USBLogger : NSObject {
     id              _listener;
     int             _loggingLevel;
     BOOL            _isLogging;
-    mach_port_t     _gMasterPort;
-    io_connect_t    _gControllerUserClientPort;
-    io_connect_t    _gKLogUserClientPort;
-    mach_port_t     _gQPort;
-    IODataQueueMemory *    _gMyQueue;
+    NSMutableDictionary *   _pendingControlRequests;   // capture thread only
 }
+
+// Names of the USB capture interfaces (XHC0, XHC1, ...) present on this machine
++ (NSArray *)captureInterfaces;
+// The subset of +captureInterfaces that is not up (needs "ifconfig <if> up" as root)
++ (NSArray *)downCaptureInterfaces;
 
 - initWithListener:(id <USBLoggerListener>)listener level:(int)level;
 
-- (kern_return_t)OpenUSBControllerUserClient;
-- (kern_return_t)setDebuggerOptions:(int)shouldLogFlag setLevel:(bool)setLevel level:(UInt32)level setType:(bool)setType type:(UInt32)type;
-
-- (void)beginLogging;
+- (BOOL)beginLogging;
 - (void)invalidate;
 - (void)setLevel:(int)level;
 
-- (kern_return_t)callUSBControllerUserClient:(io_connect_t)port methodIndex:(UInt32)methodIndex inParam:(UInt32)inParam;
 @end
